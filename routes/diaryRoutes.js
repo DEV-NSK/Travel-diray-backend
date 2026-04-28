@@ -3,15 +3,23 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const DiaryEntry = require("../models/DiaryEntry");
 const multer = require("multer");
-const path = require("path");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-// ------------------ MULTER CONFIG for media upload ------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // folder to save files
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+// ------------------ CLOUDINARY CONFIG ------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ------------------ MULTER CONFIG for media upload (Cloudinary) ------------------
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "travel-diary",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    transformation: [{ width: 1200, crop: "limit" }],
   },
 });
 const upload = multer({ storage });
@@ -20,7 +28,7 @@ const upload = multer({ storage });
 router.post("/", auth, upload.array("media", 5), async (req, res) => {
   try {
     const { title, description, location, coordinates } = req.body;
-    const media = req.files ? req.files.map((file) => file.filename) : [];
+    const media = req.files ? req.files.map((file) => file.path) : [];
 
     const diaryEntry = new DiaryEntry({
       user: req.user.id,
