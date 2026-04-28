@@ -13,29 +13,19 @@ connectDB();
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow requests with no origin (e.g. mobile apps, curl)
-      if (!origin) return callback(null, true);
-      // allow all vercel.app deployments (preview + production)
-      if (origin.endsWith(".vercel.app")) return callback(null, true);
-      // allow explicitly listed origins
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(express.json());
 app.use(morgan("dev"));
+
+// Handle preflight requests
+app.options("*", cors());
 
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
